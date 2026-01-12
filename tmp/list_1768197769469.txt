@@ -1,5 +1,0 @@
-file 'D:/kalakriti-forked/kalaKriti-updated/tmp/img_1768197769465_0.jpg'
-duration 2
-file 'D:/kalakriti-forked/kalaKriti-updated/tmp/img_1768197769467_1.jpg'
-duration 2
-file 'D:/kalakriti-forked/kalaKriti-updated/tmp/img_1768197769467_1.jpg'
