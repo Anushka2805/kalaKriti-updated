@@ -1,13 +1,13 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+// ✅ FIX 1: Added useEffect to imports
+import { useMemo, useState, useEffect } from "react";
 import { getProductById } from "../../data/products";
 import {
   FiArrowLeft,
   FiCheckCircle,
   FiDollarSign,
-  FiEdit3,
   FiInfo,
   FiMapPin,
   FiStar,
@@ -18,86 +18,113 @@ export default function BuyerProductDetailPage() {
   const params = useParams<{ id: string }>();
   const product = useMemo(() => getProductById(params.id), [params.id]);
 
-  const [activeMockupTab, setActiveMockupTab] =
-    useState<"product" | "workspace">("product");
-  const [showCustomizationSuccess, setShowCustomizationSuccess] =
-    useState(false);
+  const [offerPrice, setOfferPrice] = useState("");
+  const [negotiation, setNegotiation] = useState<any>(null);
+  const [negotiationError, setNegotiationError] = useState("");
+  const [loadingNegotiation, setLoadingNegotiation] = useState(false);
+  const [showCustomizationSuccess, setShowCustomizationSuccess] = useState(false);
   const [showOrderSuccess, setShowOrderSuccess] = useState(false);
 
-  // Negotiation (slider based)
-  const [offer, setOffer] = useState<number | null>(null);
-  const [counterOffer, setCounterOffer] = useState<number | null>(null);
-  const [negotiationMessage, setNegotiationMessage] = useState<string>("");
-
+  // ✅ FIX 2: The Actual Early Return Block
+  // This prevents crashes if the product URL is wrong
   if (!product) {
     return (
-      <main className="max-w-3xl mx-auto px-4 py-10">
-        <p className="text-sm text-gray-500 mb-3">Product not found.</p>
-        <Link
-          href="/buyer"
-          className="inline-flex items-center gap-2 text-emerald-700 text-sm"
-        >
-          <FiArrowLeft className="w-4 h-4" />
-          Back to marketplace
+      <div className="p-10 text-center text-gray-500">
+        <h2 className="text-xl font-bold">Product not found</h2>
+        <p>Please check the URL or go back to the marketplace.</p>
+        <Link href="/buyer" className="text-emerald-600 underline mt-4 block">
+          Back to Marketplace
         </Link>
-      </main>
+      </div>
     );
   }
 
-  const minOffer = Math.round(product.basePrice * 0.6);
-  const maxOffer = Math.round(product.basePrice * 1.2);
-  const effectiveOffer =
-    offer ?? Math.round(product.basePrice * 0.9); // default slider
+  // ✅ Auto-check for existing negotiation on page load
+  useEffect(() => {
+    async function checkExisting() {
+      try {
+        const res = await fetch(`/api/negotiations/check?productId=${product!.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.id) {
+            setNegotiation(data);
+            setOfferPrice(data.buyerOffer.toString());
+          }
+        }
+      } catch (err) {
+        console.error("Failed to check negotiation status", err);
+      }
+    }
+    checkExisting();
+  }, [product]);
 
-  const handleSubmitOffer = () => {
-    const offerValue = effectiveOffer;
-    const base = product.basePrice;
+  // --- Logic: Submit Initial Negotiation ---
+  async function submitNegotiation() {
+    // Safety check is technically handled by early return above, but good to keep
+    if (!product) return;
 
-    if (!offerValue || offerValue <= 0) {
-      setNegotiationMessage("Please move the slider to set your offer.");
-      setCounterOffer(null);
+    setNegotiationError("");
+    setLoadingNegotiation(true);
+
+    const numericPrice = Number(offerPrice);
+    const minPrice = Math.floor(product.basePrice * 0.7);
+
+    if (!offerPrice || isNaN(numericPrice)) {
+      setNegotiationError("Please enter a valid price.");
+      setLoadingNegotiation(false);
       return;
     }
 
-    if (offerValue < 0.6 * base) {
-      const counter = Math.round(base * 0.95);
-      setCounterOffer(counter);
-      setNegotiationMessage(
-        "This is quite low for this piece. Artisan is likely to offer a small goodwill discount only."
+    if (numericPrice < minPrice) {
+      setNegotiationError(
+        `Minimum offer is ₹${minPrice.toLocaleString("en-IN")}`
       );
-    } else if (offerValue < 0.9 * base) {
-      const counter = Math.round((offerValue + base * 0.9) / 2);
-      setCounterOffer(counter);
-      setNegotiationMessage(
-        "Reasonable starting point. A midpoint counter-offer is a realistic outcome."
-      );
-    } else if (offerValue < base) {
-      const counter = Math.round((offerValue + base) / 2);
-      setCounterOffer(counter);
-      setNegotiationMessage(
-        "You’re close to the base price. Meeting somewhere in between is likely."
-      );
-    } else {
-      setCounterOffer(offerValue);
-      setNegotiationMessage(
-        "This matches or exceeds the base price. Artisan will almost always accept this."
-      );
+      setLoadingNegotiation(false);
+      return;
     }
-  };
 
-  const handleCustomizationSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowCustomizationSuccess(true);
-    setTimeout(() => setShowCustomizationSuccess(false), 2000);
-  };
+    try {
+      const res = await fetch("/api/negotiations/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          buyerOffer: numericPrice,
+          name: product.name,
+          image: product.image,
+          basePrice: product.basePrice || product.price,
+          // @ts-ignore - Temporary fix if artisanId is missing in data types
+          artisanId: product.artisanId || "demo-artisan",
+        }),
+      });
 
-  const handleOrderSubmit = (e: React.FormEvent) => {
+      const data = await res.json();
+
+      if (res.ok) {
+        setNegotiation(data);
+      } else {
+        setNegotiationError(data.error || "Failed to start negotiation");
+      }
+    } catch (error) {
+      console.error(error);
+      setNegotiationError("Something went wrong. Please try again.");
+    } finally {
+      setLoadingNegotiation(false);
+    }
+  }
+
+  // --- Logic: Place Order Stub ---
+  function handleOrderSubmit(e: React.FormEvent) {
     e.preventDefault();
     setShowOrderSuccess(true);
-    setTimeout(() => setShowOrderSuccess(false), 2000);
-  };
+  }
 
-  // Small helper for static placement tip
+  // --- Logic: Customization Stub ---
+  function handleCustomizationSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setShowCustomizationSuccess(true);
+  }
+
   const placementLabel =
     product.category === "Toys"
       ? "Kids’ room / play corner"
@@ -121,7 +148,7 @@ export default function BuyerProductDetailPage() {
       <section className="space-y-6">
         {/* TOP: image left, details right */}
         <div className="grid lg:grid-cols-[1.1fr,1.5fr] gap-6">
-          {/* LEFT: main image, smaller and side-aligned */}
+          {/* LEFT: main image */}
           <div className="border border-gray-100 rounded-3xl bg-white shadow-sm p-4 flex flex-col items-center gap-3">
             <div className="relative w-full max-w-xs md:max-w-sm aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100">
               <img
@@ -134,7 +161,6 @@ export default function BuyerProductDetailPage() {
               Handmade piece · actual colors may vary slightly on screen.
             </p>
           </div>
-
 
           {/* RIGHT: core info + negotiation + order */}
           <div className="space-y-4">
@@ -191,78 +217,112 @@ export default function BuyerProductDetailPage() {
               </div>
             </div>
 
-            {/* Offer-based negotiation – slider */}
+            {/* ✅ REAL NEGOTIATION LOGIC SECTION */}
             <div className="border border-gray-100 rounded-3xl bg-white p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                  <FiDollarSign className="w-4 h-4 text-emerald-700" />
-                  Make an offer
-                </h2>
-                <span className="text-[11px] text-gray-500">
-                  Static demo · buyer-side only
-                </span>
-              </div>
+              <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <FiDollarSign className="w-4 h-4 text-emerald-700" />
+                Negotiate Price
+              </h2>
 
-              <div className="space-y-2 text-xs">
-                <p className="text-gray-600">
-                  Move the slider to choose your offer for one unit. We simulate
-                  how an artisan might respond.
-                </p>
+              {!negotiation && (
+                <>
+                  <p className="text-xs text-gray-600">
+                    You may negotiate up to 30% below the base price.
+                  </p>
 
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] text-gray-500">
-                    <span>Lower</span>
-                    <span>Higher</span>
-                  </div>
                   <input
-                    type="range"
-                    min={minOffer}
-                    max={maxOffer}
-                    step={50}
-                    value={effectiveOffer}
-                    onChange={(e) => setOffer(Number(e.target.value))}
-                    className="w-full accent-emerald-600"
+                    type="number"
+                    value={offerPrice}
+                    onChange={(e) => setOfferPrice(e.target.value)}
+                    placeholder={`Enter your offer (min ₹${Math.floor(
+                      product.basePrice * 0.7
+                    )})`}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-[11px] text-gray-500">
-                      Base price: ₹{product.basePrice.toLocaleString("en-IN")}
-                    </span>
-                    <span className="text-xs font-semibold text-emerald-700">
-                      Your offer: ₹{effectiveOffer.toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="flex justify-end">
+                  {negotiationError && (
+                    <p className="text-xs text-red-600">{negotiationError}</p>
+                  )}
+
                   <button
-                    type="button"
-                    onClick={handleSubmitOffer}
-                    className="px-4 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700"
+                    onClick={submitNegotiation}
+                    disabled={loadingNegotiation}
+                    className="mt-2 px-4 py-2 rounded-full bg-emerald-700 text-white text-xs font-medium disabled:opacity-50"
                   >
-                    Get counter-offer
+                    {loadingNegotiation ? "Submitting..." : "Submit Offer"}
                   </button>
-                </div>
+                </>
+              )}
 
-                {negotiationMessage && (
-                  <div className="mt-2 rounded-2xl bg-gray-50 border border-gray-100 p-3 space-y-1">
-                    {counterOffer && (
-                      <p className="text-xs text-gray-900 font-medium">
-                        Artisan counter-offer:{" "}
-                        <span className="text-emerald-700 font-semibold">
-                          ₹{counterOffer.toLocaleString("en-IN")}
-                        </span>{" "}
-                        per unit
-                      </p>
-                    )}
-                    <p className="text-[11px] text-gray-600">
-                      {negotiationMessage}
-                    </p>
+              {negotiation?.status === "PENDING" && (
+                <div className="p-3 bg-yellow-50 rounded-xl border border-yellow-100">
+                  <p className="text-xs text-yellow-800">
+                    Waiting for artisan response…
+                  </p>
+                </div>
+              )}
+
+              {negotiation?.status === "COUNTERED" && (
+                <div className="space-y-2 mt-2 bg-gray-50 p-3 rounded-xl border">
+                  <p className="text-sm text-gray-800">
+                    Artisan countered with{" "}
+                    <strong className="text-emerald-700">
+                      ₹{negotiation.artisanCounter}
+                    </strong>
+                  </p>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        await fetch("/api/negotiations/buyer-response", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            negotiationId: negotiation.id,
+                            action: "ACCEPT",
+                          }),
+                        });
+                        setNegotiation({
+                          ...negotiation,
+                          status: "ACCEPTED",
+                        });
+                      }}
+                      className="px-4 py-2 rounded-full bg-emerald-700 text-white text-xs"
+                    >
+                      Accept Counter
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        await fetch("/api/negotiations/buyer-response", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            negotiationId: negotiation.id,
+                            action: "LEAVE",
+                          }),
+                        });
+                        setNegotiation(null);
+                        setOfferPrice("");
+                      }}
+                      // ✅ Changed to dark background
+className="px-4 py-2 rounded-full bg-gray-900 text-white text-xs hover:bg-gray-800"
+                    >
+                      Leave Deal
+                    </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+              {negotiation?.status === "ACCEPTED" && (
+                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                  <p className="text-xs text-emerald-800 font-medium flex items-center gap-1">
+                    <FiCheckCircle /> Price agreed! You can now place the order.
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Order placement – minimal */}
+            {/* Order placement */}
             <div className="border border-gray-100 rounded-3xl bg-white p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-900">
@@ -330,7 +390,6 @@ export default function BuyerProductDetailPage() {
 
         {/* BOTTOM: AR/VR-style mockup + static “how to place” tips */}
         <div className="grid md:grid-cols-[1.3fr,1fr] gap-4">
-          {/* AR/VR style mockup (hardcoded demo) */}
           <div className="border border-gray-100 rounded-3xl bg-white shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h2 className="text-sm font-semibold text-gray-900">
@@ -343,13 +402,11 @@ export default function BuyerProductDetailPage() {
             </div>
 
             <div className="relative aspect-[16/9] bg-gray-900">
-              {/* Background room */}
               <img
                 src="https://images.pexels.com/photos/6585763/pexels-photo-6585763.jpeg?auto=compress&cs=tinysrgb&w=1200"
                 alt="Room mockup"
                 className="w-full h-full object-cover opacity-70"
               />
-              {/* Product as framed overlay */}
               <div className="absolute inset-6 md:inset-10 flex items-center justify-center">
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden w-full max-w-md">
                   <img
@@ -362,7 +419,6 @@ export default function BuyerProductDetailPage() {
             </div>
           </div>
 
-          {/* How to place – STATIC helper card */}
           <div className="border border-gray-100 rounded-3xl bg-white p-4 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-gray-900">
@@ -375,19 +431,15 @@ export default function BuyerProductDetailPage() {
 
             <div className="space-y-3 text-xs">
               <div className="rounded-2xl bg-gray-50 p-3 space-y-1.5">
-                <p className="font-medium text-gray-800">
-                  Suggested spot
-                </p>
-                <p className="text-gray-600 text-[11px]">
-                  {placementLabel}
-                </p>
+                <p className="font-medium text-gray-800">Suggested spot</p>
+                <p className="text-gray-600 text-[11px]">{placementLabel}</p>
               </div>
 
               <div className="rounded-2xl bg-gray-50 p-3 space-y-1.5">
                 <p className="font-medium text-gray-800">Lighting</p>
                 <p className="text-gray-600 text-[11px]">
-                  Soft, warm lighting usually works best. Avoid very harsh
-                  direct light that can flatten textures.
+                  Soft, warm lighting usually works best. Avoid very harsh direct
+                  light that can flatten textures.
                 </p>
               </div>
 

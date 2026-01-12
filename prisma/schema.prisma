@@ -7,26 +7,46 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model Conversation {
   id              String          @id @default(cuid())
   title           String
   createdAt       DateTime        @default(now())
+
   messages        Message[]
   customRequests  CustomRequest[]
   negotiations    Negotiation[]
 }
 
+model Product {
+  id          String   @id
+  name        String   @default("Handmade Item") // ✅ Added
+  image       String?  // ✅ Added
+  description String?  // ✅ Added
+  
+  price       Int
+  basePrice   Int?     // ✅ Added (useful for negotiation logic)
+  artisanId   String
+  
+  negotiations Negotiation[]
+}
+
+
 model Message {
   id             String       @id @default(cuid())
+
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   conversationId String
+
   from           String       // "buyer" | "artisan"
   text           String
   createdAt      DateTime     @default(now())
 }
 
+
 model CustomRequest {
   id             String       @id @default(cuid())
+
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   conversationId String
 
@@ -34,26 +54,28 @@ model CustomRequest {
   note           String
   imageUrl       String?
 
-  // was: status CustomRequestStatus
   status         String       @default("SENT")
   createdAt      DateTime     @default(now())
 }
 
+
 model Negotiation {
-  id             String       @id @default(cuid())
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  id             String       @id @default(uuid())
+  productId      String
   conversationId String
-
-  productName    String
-  buyerName      String
-  offerAmount    Int
-  counterAmount  Int?
-
-  // was: status NegotiationStatus
+  buyerId        String
+  artisanId      String
+  basePrice      Int
+  buyerOffer     Int
+  artisanCounter Int?
   status         String       @default("PENDING")
   createdAt      DateTime     @default(now())
-}
+  updatedAt      DateTime     @updatedAt
 
-// ❌ ye 2 enums HATA DO completely (bilkul na rakho):
-// enum CustomRequestStatus { ... }
-// enum NegotiationStatus { ... }
+  product        Product      @relation(fields: [productId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([productId])
+  @@index([buyerId])
+  @@index([artisanId])
+}

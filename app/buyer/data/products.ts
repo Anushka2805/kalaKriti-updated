@@ -9,7 +9,9 @@ export type Product = {
   thumbnail: string;
   rating: number;
   reviews: number;
+  
   artisanName: string;
+  artisanId: string;
   artisanLocation: string;
   deliveryEstimate: string;
   tags: string[];
@@ -30,6 +32,7 @@ export const PRODUCTS: Product[] = [
     rating: 4.8,
     reviews: 132,
     artisanName: "Ananya Crafts Collective",
+    artisanId: "artisan-ramesh",
     artisanLocation: "Jaipur, Rajasthan",
     deliveryEstimate: "5–7 days",
     tags: ["Crochet", "Kids", "Custom names", "Gift"],
@@ -48,7 +51,9 @@ export const PRODUCTS: Product[] = [
       "https://images.pexels.com/photos/32397280/pexels-photo-32397280.jpeg?auto=compress&cs=tinysrgb&w=600",
     rating: 4.9,
     reviews: 214,
+    
     artisanName: "Berry & Cocoa Studio",
+    artisanId: "artisan-ramesh",
     artisanLocation: "Bengaluru, Karnataka",
     deliveryEstimate: "2–3 days (cold chain)",
     tags: ["Gifting", "Party", "Premium", "Vegetarian"],
@@ -68,6 +73,7 @@ export const PRODUCTS: Product[] = [
     rating: 4.7,
     reviews: 89,
     artisanName: "Mithila Kala Studio",
+    artisanId: "artisan-ramesh",
     artisanLocation: "Darbhanga, Bihar",
     deliveryEstimate: "6–9 days",
     tags: ["Traditional", "Hand-painted", "Framed", "Living room"],
@@ -88,6 +94,7 @@ export const PRODUCTS: Product[] = [
     rating: 4.6,
     reviews: 67,
     artisanName: "Bagru Print Karigars",
+    artisanId: "artisan-ramesh",
     artisanLocation: "Bagru, Rajasthan",
     deliveryEstimate: "5–8 days",
     tags: ["Block print", "Cotton", "Cushion", "Boho"],
@@ -107,6 +114,7 @@ export const PRODUCTS: Product[] = [
     rating: 4.5,
     reviews: 54,
     artisanName: "Village Clay Studio",
+    artisanId: "artisan-ramesh",
     artisanLocation: "Khurja, Uttar Pradesh",
     deliveryEstimate: "6–9 days",
     tags: ["Terracotta", "Planter", "Indoor plants", "Eco-friendly"],
@@ -126,6 +134,7 @@ export const PRODUCTS: Product[] = [
     rating: 4.4,
     reviews: 41,
     artisanName: "Northeast Cane Collective",
+    artisanId: "artisan-ramesh",
     artisanLocation: "Guwahati, Assam",
     deliveryEstimate: "7–10 days",
     tags: ["Basket", "Cane", "Organiser", "Eco-friendly"],
@@ -145,6 +154,7 @@ export const PRODUCTS: Product[] = [
     rating: 4.8,
     reviews: 103,
     artisanName: "Little Letters Studio",
+    artisanId: "artisan-ramesh",
     artisanLocation: "Pune, Maharashtra",
     deliveryEstimate: "5–8 days",
     tags: ["Kids decor", "Custom name", "Gift"],
@@ -164,6 +174,7 @@ export const PRODUCTS: Product[] = [
     rating: 4.6,
     reviews: 76,
     artisanName: "Shubh Decor Collective",
+    artisanId: "artisan-ramesh",
     artisanLocation: "Ahmedabad, Gujarat",
     deliveryEstimate: "4–7 days",
     tags: ["Festive", "Door hanging", "Diwali", "Traditional"],
@@ -183,6 +194,7 @@ export const PRODUCTS: Product[] = [
     rating: 4.7,
     reviews: 120,
     artisanName: "Studio Mitti",
+    artisanId: "artisan-ramesh",
     artisanLocation: "Auroville, Tamil Nadu",
     deliveryEstimate: "6–9 days",
     tags: ["Mugs", "Ceramic", "Hand-painted", "Gifting"],
@@ -202,6 +214,7 @@ export const PRODUCTS: Product[] = [
     rating: 4.5,
     reviews: 58,
     artisanName: "Channapatna Toy Makers",
+    artisanId: "artisan-ramesh",
     artisanLocation: "Channapatna, Karnataka",
     deliveryEstimate: "6–9 days",
     tags: ["Wooden toys", "Kids", "Montessori"],
