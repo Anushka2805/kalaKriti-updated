@@ -5,17 +5,11 @@ import fs from "fs";
 
 ffmpeg.setFfmpegPath(ffmpegPath.path);
 
-interface VideoOptions {
-  imagePath: string;
-  caption: string;
-  outputName: string;
-}
-
-export async function generatePromoVideo({
-  imagePath,
-  caption,
-  outputName,
-}: VideoOptions): Promise<string> {
+// ✅ Fix: Function accepts an ARRAY of paths
+export async function generatePromoVideo(
+  imagePaths: string[], 
+  outputName: string
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const outputDir = path.join(process.cwd(), "public/videos");
     if (!fs.existsSync(outputDir)) {
@@ -23,36 +17,35 @@ export async function generatePromoVideo({
     }
 
     const outputPath = path.join(outputDir, outputName);
+    
+    // ✅ Windows-Safe Fix: Create a list file
+    const tempDir = path.dirname(imagePaths[0]); 
+    const listFilePath = path.join(tempDir, `list_${Date.now()}.txt`);
 
-    ffmpeg()
-      .input(imagePath)
-      .loop(6)
-      .videoFilters([
-        {
-          filter: "zoompan",
-          options: "z='min(zoom+0.0005,1.1)':d=180",
-        },
-        {
-          filter: "drawtext",
-          options: {
-            text: caption,
-            fontsize: 36,
-            fontcolor: "white",
-            x: "(w-text_w)/2",
-            y: "h-120",
-            box: 1,
-            boxcolor: "black@0.6",
-          },
-        },
-      ])
-      .size("1080x1080")
+    const fileContent = imagePaths
+      .map((p) => `file '${p.replace(/\\/g, "/")}'\nduration 2`)
+      .join("\n");
+
+    const lastPath = imagePaths[imagePaths.length - 1].replace(/\\/g, "/");
+    const finalContent = `${fileContent}\nfile '${lastPath}'`;
+
+    fs.writeFileSync(listFilePath, finalContent);
+
+    ffmpeg(listFilePath)
+      .inputOptions(["-f concat", "-safe 0"])
       .outputOptions([
         "-pix_fmt yuv420p",
-        "-movflags +faststart",
+        "-c:v libx264",
+        "-r 30",
       ])
-      .output(outputPath)
-      .on("end", () => resolve(`/videos/${outputName}`))
-      .on("error", (err) => reject(err))
-      .run();
+      .save(outputPath)
+      .on("end", () => {
+        try { fs.unlinkSync(listFilePath); } catch (e) {}
+        resolve(`/videos/${outputName}`);
+      })
+      .on("error", (err: Error) => {
+        console.error("FFmpeg Error:", err);
+        reject(err);
+      });
   });
 }
