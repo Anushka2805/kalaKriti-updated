@@ -6,8 +6,8 @@ import SidebarArtisan from "../src/components/SidebarArtisan";
 export default function ArtisanLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // Hide sidebar on signup page only
-  const hideSidebar = pathname === "/artisan/signup";
+  // Hide sidebar on signup and signin pages
+  const hideSidebar = pathname === "/artisan/signup" || pathname === "/artisan/signin";
 
   return (
     <div className="flex w-full min-h-screen">

@@ -1,6 +1,6 @@
 "use client";
 
-export default function ArtisanSignup() {
+export default function BuyerSignup() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8FAFC] px-4">
 
@@ -10,7 +10,7 @@ export default function ArtisanSignup() {
           KalaKriti
         </h2>
         <p className="text-sm text-gray-500 mt-1">
-          Signup as Artisan
+          Signup as Buyer
         </p>
       </div>
 
@@ -20,34 +20,21 @@ export default function ArtisanSignup() {
         <div className="space-y-4">
           <input className="input" placeholder="Full Name" />
           <input className="input" placeholder="Email Address" />
-          <input className="input" placeholder="Phone Number" />
           <input className="input" type="password" placeholder="Password" />
 
-          <select className="input">
-            <option>Preferred Language</option>
-            <option>Hindi</option>
-            <option>English</option>
-          </select>
-
-          <input className="input" placeholder="State (e.g. Rajasthan)" />
-          <input
-            className="input"
-            placeholder="Type of Craft (e.g. Pottery, Madhubani)"
-          />
-
           <button className="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition">
-            Sign Up as Artisan
+            Sign Up as Buyer
           </button>
         </div>
 
-        {/* Switch to Buyer */}
+        {/* Switch to Artisan */}
         <p className="text-center text-sm mt-6 text-gray-600">
-          Want to shop instead?
+          Are you an artisan?
           <a
-            href="/buyer/signup"
+            href="/artisan/signup"
             className="text-emerald-600 font-semibold ml-1 hover:underline"
           >
-            Signup as Buyer
+            Signup as Artisan
           </a>
         </p>
 
@@ -55,7 +42,7 @@ export default function ArtisanSignup() {
         <p className="text-center text-sm mt-2 text-gray-600">
           Already have an account?
           <a
-            href="/artisan/signin"
+            href="/buyer/signin"
             className="text-emerald-600 font-semibold ml-1 hover:underline"
           >
             Sign In
