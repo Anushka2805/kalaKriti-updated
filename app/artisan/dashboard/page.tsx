@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+
 
 export default function ArtisanDashboard() {
   // --- FIXED TABS ---
   const tabList = ["chats", "requests", "negotiations"] as const;
   const [activeTab, setActiveTab] = useState<(typeof tabList)[number]>("chats");
+  const router = useRouter();   
 
   // --- DUMMY PREVIEW DATA (Replace with real API later) ---
   const chatPreview = [
@@ -48,9 +51,13 @@ export default function ArtisanDashboard() {
             </p>
           </div>
 
-          <button className="mt-6 md:mt-0 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium shadow">
-            Start One-Click Flow
-          </button>
+         <button
+  onClick={() => router.push("/artisan/add-product")}
+  className="mt-6 md:mt-0 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium shadow"
+>
+  Start One-Click Flow
+</button>
+
         </div>
       </div>
 
