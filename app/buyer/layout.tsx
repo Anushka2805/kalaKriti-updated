@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import NavbarBuyer from "../src/components/NavbarBuyer";
+import NavbarBuyer from "@/components/NavbarBuyer";
 
 export default function BuyerLayout({
   children,

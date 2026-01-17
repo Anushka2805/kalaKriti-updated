@@ -1,54 +1,73 @@
 "use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function BuyerSignup() {
+  const router = useRouter();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSignup = async () => {
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include", // 🔥 IMPORTANT
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+        role: "BUYER",
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Signup failed");
+      return;
+    }
+
+    // ✅ redirect after signup
+    router.push("/buyer/signin");
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8FAFC] px-4">
-
-      {/* Brand Header */}
-      <div className="text-center mb-6">
-        <h2 className="text-4xl font-extrabold text-emerald-700 tracking-wide">
-          KalaKriti
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+        <h2 className="text-3xl font-bold text-center text-emerald-700">
+          Buyer Signup
         </h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Signup as Buyer
-        </p>
-      </div>
 
-      {/* Signup Card */}
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md border border-gray-100">
+        <div className="space-y-4 mt-6">
+          <input
+            className="input"
+            placeholder="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <input
+            className="input"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input
+            className="input"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
 
-        <div className="space-y-4">
-          <input className="input" placeholder="Full Name" />
-          <input className="input" placeholder="Email Address" />
-          <input className="input" type="password" placeholder="Password" />
-
-          <button className="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition">
+          <button
+            onClick={handleSignup}
+            className="w-full bg-emerald-600 text-white py-3 rounded-lg"
+          >
             Sign Up as Buyer
           </button>
         </div>
-
-        {/* Switch to Artisan */}
-        <p className="text-center text-sm mt-6 text-gray-600">
-          Are you an artisan?
-          <a
-            href="/artisan/signup"
-            className="text-emerald-600 font-semibold ml-1 hover:underline"
-          >
-            Signup as Artisan
-          </a>
-        </p>
-
-        {/* Login */}
-        <p className="text-center text-sm mt-2 text-gray-600">
-          Already have an account?
-          <a
-            href="/buyer/signin"
-            className="text-emerald-600 font-semibold ml-1 hover:underline"
-          >
-            Sign In
-          </a>
-        </p>
-
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import SidebarArtisan from "../src/components/SidebarArtisan";
+import SidebarArtisan from "@/components/SidebarArtisan";
 
 export default function ArtisanLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

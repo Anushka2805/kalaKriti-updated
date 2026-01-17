@@ -1,8 +1,49 @@
 "use client";
+
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function BuyerSignin() {
   const router = useRouter();
+
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const role = "BUYER";
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (!phone || !password) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    setLoading(true);
+
+    const res = await fetch("/api/auth/signin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone,
+        password,
+        role,
+      }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (!res.ok) {
+      alert(data.error);
+      return;
+    }
+
+    // TEMP (later cookies/session)
+    
+
+    router.push("/buyer");
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8FAFC] px-4">
@@ -13,7 +54,7 @@ export default function BuyerSignin() {
           KalaKriti
         </h2>
         <p className="text-sm text-gray-500 mt-1">
-          Signin as Buyer
+          Sign in as Buyer
         </p>
       </div>
 
@@ -22,36 +63,44 @@ export default function BuyerSignin() {
 
         {/* Toggle */}
         <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
-          <button
-            className="flex-1 py-2 rounded-md text-sm font-medium bg-emerald-600 text-white"
-          >
+          <button className="flex-1 py-2 rounded-md text-sm font-medium bg-emerald-600 text-white">
             Buyer
           </button>
 
           <button
+            type="button"
             onClick={() => router.push("/artisan/signin")}
-            className="flex-1 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-200 rounded-md transition"
+            className="flex-1 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-200 transition"
           >
             Artisan
           </button>
         </div>
 
         {/* Inputs */}
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <input
             className="input"
-            placeholder="Email Address or Phone Number"
+            placeholder="Phone Number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
           />
+
           <input
             className="input"
             type="password"
             placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
 
-          <button className="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition">
-            Sign In
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition"
+          >
+            {loading ? "Signing in..." : "Sign In"}
           </button>
-        </div>
+        </form>
 
         {/* Extra Actions */}
         <div className="flex justify-between items-center mt-4 text-sm">

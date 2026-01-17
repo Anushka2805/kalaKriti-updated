@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 
 type Step =
     | 0
@@ -41,6 +42,14 @@ export default function AddProduct() {
         setImages((prev) => [...prev, ...filesToAdd]);
     };
 
+    const [artisanId, setArtisanId] = useState<string | null>(null);
+
+useEffect(() => {
+  const id = localStorage.getItem("userId");
+  setArtisanId(id);
+}, []);
+
+
     const removeImage = (index: number) => {
         setImages((prev) => prev.filter((_, i) => i !== index));
     };
@@ -50,7 +59,72 @@ export default function AddProduct() {
         width: "",
         height: "",
     });
+    const uploadImages = async () => {
+  if (images.length === 0) return [];
 
+  const uploadedUrls: string[] = [];
+
+  for (const file of images) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+
+    if (!res.ok) throw new Error("Image upload failed");
+
+    const data = await res.json();
+    uploadedUrls.push(data.url);
+  }
+
+  return uploadedUrls;
+};
+
+
+const handlePublish = async () => {
+  if (!productName || !price) {
+    alert("Product name and price required");
+    return;
+  }
+  if (!artisanId) {
+    alert("Not logged in");
+    return;
+  }
+  try{
+
+    const imageUrls = await uploadImages();
+    if (imageUrls.length === 0) {
+      alert("Please upload at least one image");
+      return;
+    }
+
+  const res = await fetch("/api/artisan/products", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: productName,
+      description,
+      price: Number(price),
+      basePrice: Number(price),
+      artisanId: artisanId,
+      images : imageUrls,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Product create failed");
+  }
+
+  alert("Product published 🎉");
+  window.location.href = "/artisan/products";
+}catch (err) {
+    console.error(err);
+    alert("failed to publish product");
+  }
+};
     const [category, setCategory] = useState<string>("");
 
     const nextStep = () => {
@@ -256,11 +330,13 @@ export default function AddProduct() {
                         </button>
                     ) : (
                         <button
-                            onClick={() => console.log("Publish Product")}
+                            onClick={handlePublish}
                             className="px-6 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
                         >
                             Publish Product
                         </button>
+                        
+
                     )}
                 </div>
             </div>
