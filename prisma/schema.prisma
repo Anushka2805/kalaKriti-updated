@@ -120,3 +120,25 @@ model Wishlist {
 
   @@unique([buyerId, productId])
 }
+model Order {
+  id          String   @id @default(cuid())
+  orderNumber String
+  buyerId     String
+  artisanId   String
+  productId   String?
+  title       String
+  amount      Int
+  status      OrderStatus
+  isCustom    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  buyer   User @relation(fields: [buyerId], references: [id])
+  artisan User @relation(fields: [artisanId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+}
+
+enum OrderStatus {
+  PENDING
+  FULFILLED
+  CANCELLED
+}
