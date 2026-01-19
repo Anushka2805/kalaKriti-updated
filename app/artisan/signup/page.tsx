@@ -55,28 +55,26 @@ const router = useRouter();
     };
 
     const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  credentials: "include", // 🔥 MUST
+  body: JSON.stringify(payload),
+});
 
-    const data = await res.json();
-    setLoading(false);
+const data = await res.json();
+setLoading(false);
 
-    
+if (!res.ok) {
+  alert(data.error || "Signup failed");
+  return;
+}
 
-    if (!res.ok) {
-      alert(data.error || "Signup failed");
-      return;
-    }
-    
-
-
-    if (role === "artisan") {
+if (role === "artisan") {
   router.push("/artisan/dashboard");
 } else {
   router.push("/buyer");
 }
+
 
   }
 

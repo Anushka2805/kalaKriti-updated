@@ -23,10 +23,15 @@ export default function SidebarArtisan() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
-    localStorage.clear();
-    router.push("/artisan/signin");
-  };
+  const handleLogout = async () => {
+  await fetch("/api/auth/logout", {
+    method: "POST",
+    credentials: "include", // 🔥 VERY IMPORTANT
+  });
+
+  router.push("/artisan/signin");
+};
+
 
   return (
     <aside className="w-64 fixed h-screen bg-white border-r flex flex-col justify-between">

@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
 /* ---------------- CREATE PRODUCT (ARTISAN) ---------------- */
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const cookieStore = cookies();
+    const userId = cookieStore.get("userId")?.value;
+    const role = cookieStore.get("role")?.value;
 
-    const { name, description, price, basePrice, artisanId, images } = body;
+    if (!userId || role !== "ARTISAN") {
+      return NextResponse.json(
+        { error: "Not logged in as artisan" },
+        { status: 401 }
+      );
+    }
 
-    if (!name || !price || !artisanId) {
+    const { name, description, price, basePrice, images } = await req.json();
+
+    if (!name || !price) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -21,7 +31,7 @@ export async function POST(req: Request) {
         description,
         price: Number(price),
         basePrice: basePrice ? Number(basePrice) : null,
-        artisanId,
+        artisanId: userId, // ✅ SAME ID USED EVERYWHERE
         images: {
           create: (images || []).map((url: string) => ({ url })),
         },
@@ -31,7 +41,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {
-    console.error("POST /api/products error:", error);
+    console.error("POST /api/artisan/products error:", error);
     return NextResponse.json(
       { error: "Failed to create product" },
       { status: 500 }
@@ -39,43 +49,21 @@ export async function POST(req: Request) {
   }
 }
 
-/* ---------------- GET PRODUCTS ---------------- */
-export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const artisanId = searchParams.get("artisanId");
+/* ---------------- GET PRODUCTS (ARTISAN) ---------------- */
+export async function GET() {
+  const userId = cookies().get("userId")?.value;
+  const role = cookies().get("role")?.value;
 
-    /* 🔹 ARTISAN VIEW */
-    if (artisanId) {
-      const products = await prisma.product.findMany({
-        where: { artisanId },
-        include: { images: true },
-        orderBy: { createdAt: "desc" },
-      });
-
-      return NextResponse.json(products);
-    }
-
-    /* 🔹 BUYER VIEW (ALL PRODUCTS) */
-    const products = await prisma.product.findMany({
-      include: {
-        images: true,
-        artisan: {
-          select: {
-            id: true,
-            fullName: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    return NextResponse.json(products);
-  } catch (error) {
-    console.error("GET /api/products error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch products" },
-      { status: 500 }
-    );
+  if (!userId || role !== "ARTISAN") {
+    return NextResponse.json([], { status: 200 });
   }
+
+  const products = await prisma.product.findMany({
+    where: { artisanId: userId },
+    include: { images: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return NextResponse.json(products);
 }
+    

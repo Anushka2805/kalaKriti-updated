@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
 /* ---------------- GET WISHLIST ---------------- */
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const buyerId = searchParams.get("buyerId");
+    const cookieStore = cookies();
+    const buyerId = cookieStore.get("userId")?.value;
+    const role = cookieStore.get("role")?.value;
 
-    if (!buyerId) {
+    if (!buyerId || role !== "BUYER") {
       return NextResponse.json(
-        { error: "buyerId is required" },
-        { status: 400 }
+        { error: "Not logged in" },
+        { status: 401 }
       );
     }
 
@@ -21,7 +23,10 @@ export async function GET(req: Request) {
           include: {
             images: true,
             artisan: {
-              select: { fullName: true, location: true },
+              select: {
+                fullName: true,
+                location: true,
+              },
             },
           },
         },
@@ -42,11 +47,22 @@ export async function GET(req: Request) {
 /* ---------------- ADD TO WISHLIST ---------------- */
 export async function POST(req: Request) {
   try {
-    const { buyerId, productId } = await req.json();
+    const cookieStore = cookies();
+    const buyerId = cookieStore.get("userId")?.value;
+    const role = cookieStore.get("role")?.value;
 
-    if (!buyerId || !productId) {
+    if (!buyerId || role !== "BUYER") {
       return NextResponse.json(
-        { error: "buyerId and productId required" },
+        { error: "Not logged in" },
+        { status: 401 }
+      );
+    }
+
+    const { productId } = await req.json();
+
+    if (!productId) {
+      return NextResponse.json(
+        { error: "productId required" },
         { status: 400 }
       );
     }
@@ -57,7 +73,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json(item, { status: 201 });
   } catch (error: any) {
-    // Handle duplicate wishlist add
     if (error.code === "P2002") {
       return NextResponse.json(
         { error: "Already in wishlist" },
@@ -76,11 +91,22 @@ export async function POST(req: Request) {
 /* ---------------- REMOVE FROM WISHLIST ---------------- */
 export async function DELETE(req: Request) {
   try {
-    const { buyerId, productId } = await req.json();
+    const cookieStore = cookies();
+    const buyerId = cookieStore.get("userId")?.value;
+    const role = cookieStore.get("role")?.value;
 
-    if (!buyerId || !productId) {
+    if (!buyerId || role !== "BUYER") {
       return NextResponse.json(
-        { error: "buyerId and productId required" },
+        { error: "Not logged in" },
+        { status: 401 }
+      );
+    }
+
+    const { productId } = await req.json();
+
+    if (!productId) {
+      return NextResponse.json(
+        { error: "productId required" },
         { status: 400 }
       );
     }

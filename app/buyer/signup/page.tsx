@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 
 export default function BuyerSignup() {
   const router = useRouter();
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,7 +12,7 @@ export default function BuyerSignup() {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include", // 🔥 IMPORTANT
+      credentials: "include",
       body: JSON.stringify({
         name,
         email,
@@ -29,9 +28,11 @@ export default function BuyerSignup() {
       return;
     }
 
-    // ✅ redirect after signup
-    router.push("/buyer/signin");
+    // ✅ DIRECT LOGIN
+    router.push("/buyer");
   };
+
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">

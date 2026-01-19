@@ -5,11 +5,15 @@ export async function POST() {
 
   res.cookies.set("userId", "", {
     httpOnly: true,
+    path: "/",
+    sameSite: "lax",
     expires: new Date(0),
   });
 
   res.cookies.set("role", "", {
     httpOnly: true,
+    path: "/",
+    sameSite: "lax",
     expires: new Date(0),
   });
 

@@ -23,6 +23,8 @@ export default function ArtisanSignin() {
   const res = await fetch("/api/auth/signin", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
+    credentials: "include",
+
   body: JSON.stringify({
     phone,
     password,
@@ -65,7 +67,7 @@ if (!res.ok) {
         <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
           <button
           type="button"
-            onClick={() => router.push("/buyer/signin")}
+            onClick={() => router.push("/buyer")}
             className="flex-1 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-200 transition"
           >
             Buyer

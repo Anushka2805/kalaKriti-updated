@@ -42,12 +42,12 @@ export default function AddProduct() {
         setImages((prev) => [...prev, ...filesToAdd]);
     };
 
-    const [artisanId, setArtisanId] = useState<string | null>(null);
+    // const [artisanId, setArtisanId] = useState<string | null>(null);
 
-useEffect(() => {
-  const id = localStorage.getItem("userId");
-  setArtisanId(id);
-}, []);
+    //     useEffect(() => {
+    //     const id = localStorage.getItem("userId");
+    //     setArtisanId(id);
+    //     }, []);
 
 
     const removeImage = (index: number) => {
@@ -89,10 +89,10 @@ const handlePublish = async () => {
     alert("Product name and price required");
     return;
   }
-  if (!artisanId) {
-    alert("Not logged in");
-    return;
-  }
+//   if (!artisanId) {
+//     alert("Not logged in");
+//     return;
+//   }
   try{
 
     const imageUrls = await uploadImages();
@@ -104,18 +104,20 @@ const handlePublish = async () => {
   const res = await fetch("/api/artisan/products", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({
       name: productName,
       description,
       price: Number(price),
       basePrice: Number(price),
-      artisanId: artisanId,
       images : imageUrls,
     }),
   });
 
   if (!res.ok) {
-    throw new Error("Product create failed");
+    const data = await res.json();
+      alert(data.error || "Failed to publish");
+      return;
   }
 
   alert("Product published 🎉");

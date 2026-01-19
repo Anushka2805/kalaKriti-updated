@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
@@ -61,12 +62,30 @@ export async function POST(req: Request) {
       },
     });
 
+    /* ✅ AUTO LOGIN: SET COOKIES */
+    const cookieStore = cookies();
+
+    cookieStore.set("userId", user.id, {
+  httpOnly: true,
+  path: "/",
+  sameSite: "lax",
+});
+
+cookieStore.set("role", user.role, {
+  httpOnly: true,
+  path: "/",
+  sameSite: "lax",
+});
+
+
     return NextResponse.json(
-      { message: "Signup successful", userId: user.id },
+      {
+        message: "Signup successful",
+      },
       { status: 201 }
     );
   } catch (error) {
-    console.error(error);
+    console.error("Signup error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

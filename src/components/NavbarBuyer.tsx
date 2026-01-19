@@ -19,10 +19,15 @@ export default function NavbarBuyer() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
-    localStorage.clear();
-    router.push("/buyer/signin");
-  };
+  const handleLogout = async () => {
+  await fetch("/api/auth/logout", {
+    method: "POST",
+    credentials: "include", // 🔥 IMPORTANT
+  });
+
+  router.push("/buyer/signin");
+};
+
 
   const isActive = (href: string) => {
     if (href === "/buyer") return pathname === "/buyer";
