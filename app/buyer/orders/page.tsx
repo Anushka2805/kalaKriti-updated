@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 interface Order {
   id: string;
+  orderNumber: string; // ✅ ADD THIS
   title: string;
   amount: number;
   createdAt: string;
@@ -22,8 +23,13 @@ export default function BuyerOrders() {
 
   /* ================= FETCH ORDERS ================= */
   useEffect(() => {
-    fetch("/api/buyer/orders", { credentials: "include" })
-      .then((res) => res.json())
+    fetch("/api/buyer/orders", {
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch orders");
+        return res.json();
+      })
       .then(setOrders)
       .catch(console.error);
   }, []);
@@ -68,7 +74,7 @@ export default function BuyerOrders() {
 
         <div className="bg-white border rounded-xl p-6 space-y-4 shadow-sm">
           <p className="font-mono text-sm text-gray-500">
-            INV-{selectedOrder.id}
+            {selectedOrder.orderNumber}
           </p>
 
           <p className="font-semibold text-lg">{selectedOrder.title}</p>
@@ -106,7 +112,7 @@ export default function BuyerOrders() {
         </div>
 
         <div className="mt-6 space-y-3">
-          {isCancelledPreview && selectedOrder.status !== "CANCELLED" && (
+          {isCancelledPreview && selectedOrder.status === "PENDING" && (
             <button
               onClick={() => cancelOrder(selectedOrder.id)}
               className="w-full bg-red-600 text-white py-3 rounded-lg"
@@ -134,60 +140,66 @@ export default function BuyerOrders() {
     <main className="p-8 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-8">Your Orders</h1>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {orders.map((order) => (
-          <div
-            key={order.id}
-            className="border rounded-xl p-5 bg-white shadow-sm"
-          >
-            <div className="flex justify-between mb-2">
-              <span className="text-xs font-mono">{order.id}</span>
-              <span
-                className={`text-xs px-2 py-1 rounded-full ${
-                  order.status === "FULFILLED"
-                    ? "bg-green-100 text-green-700"
-                    : order.status === "CANCELLED"
-                    ? "bg-red-100 text-red-700"
-                    : "bg-yellow-100 text-yellow-700"
-                }`}
-              >
-                {order.status}
-              </span>
-            </div>
+      {orders.length === 0 ? (
+        <p>No orders yet.</p>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {orders.map((order) => (
+            <div
+              key={order.id}
+              className="border rounded-xl p-5 bg-white shadow-sm"
+            >
+              <div className="flex justify-between mb-2">
+                <span className="text-xs font-mono">
+                  {order.orderNumber}
+                </span>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    order.status === "FULFILLED"
+                      ? "bg-green-100 text-green-700"
+                      : order.status === "CANCELLED"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}
+                >
+                  {order.status}
+                </span>
+              </div>
 
-            <h3 className="font-semibold">{order.title}</h3>
-            <p className="text-sm text-gray-500">
-              {new Date(order.createdAt).toDateString()}
-            </p>
+              <h3 className="font-semibold">{order.title}</h3>
+              <p className="text-sm text-gray-500">
+                {new Date(order.createdAt).toDateString()}
+              </p>
 
-            <p className="font-bold text-lg mt-2">₹{order.amount}</p>
+              <p className="font-bold text-lg mt-2">₹{order.amount}</p>
 
-            <div className="mt-4 space-y-2">
-              <button
-                onClick={() => {
-                  setSelectedOrder(order);
-                  setIsCancelledPreview(false);
-                }}
-                className="w-full border py-2 rounded-lg"
-              >
-                View Invoice
-              </button>
-
-              {order.status === "PENDING" && (
+              <div className="mt-4 space-y-2">
                 <button
                   onClick={() => {
                     setSelectedOrder(order);
-                    setIsCancelledPreview(true);
+                    setIsCancelledPreview(false);
                   }}
-                  className="w-full border border-red-200 text-red-600 py-2 rounded-lg"
+                  className="w-full border py-2 rounded-lg"
                 >
-                  Cancel Order
+                  View Invoice
                 </button>
-              )}
+
+                {order.status === "PENDING" && (
+                  <button
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setIsCancelledPreview(true);
+                    }}
+                    className="w-full border border-red-200 text-red-600 py-2 rounded-lg"
+                  >
+                    Cancel Order
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

@@ -19,20 +19,20 @@ model Conversation {
 
 model Product {
   id          String  @id @default(cuid())
-  name        String  @default("Handmade Item") // ✅ Added
-  //image       String[] @default([])  // ✅ Added
-  description String? // ✅ Added
+  name        String  @default("Handmade Item")
+  description String?
 
   price     Int
-  basePrice Int? // ✅ Added (useful for negotiation logic)
+  basePrice Int?
   artisanId String
   artisan   User     @relation("ArtisanProducts", fields: [artisanId], references: [id])
   createdAt DateTime @default(now())
 
-  images ProductImage[]
-
+  images       ProductImage[]
   negotiations Negotiation[]
   Wishlist     Wishlist[]
+  orders       Order[] // ✅ ADD THIS
+  isActive  Boolean  @default(true)
 }
 
 model ProductImage {
@@ -99,6 +99,11 @@ model User {
   email String?
   city  String?
 
+  // 👇 ADD THESE
+  bio        String?
+  location   String?
+  profilePic String?
+
   // Optional (artisan)
   language   String?
   state      String?
@@ -106,6 +111,10 @@ model User {
   experience Int?
 
   products Product[] @relation("ArtisanProducts")
+
+  // ✅ ADD THESE TWO LINES
+  buyerOrders   Order[] @relation("BuyerOrders")
+  artisanOrders Order[] @relation("ArtisanOrders")
 
   createdAt DateTime @default(now())
 }
@@ -120,6 +129,7 @@ model Wishlist {
 
   @@unique([buyerId, productId])
 }
+
 model Order {
   id          String   @id @default(cuid())
   orderNumber String
@@ -128,17 +138,13 @@ model Order {
   productId   String?
   title       String
   amount      Int
-  status      OrderStatus
+  pincode String?
+  address String?
+  status      String   @default("PENDING") // ✅ String, NOT enum
   isCustom    Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
 
-  buyer   User @relation(fields: [buyerId], references: [id])
-  artisan User @relation(fields: [artisanId], references: [id])
+  buyer   User     @relation("BuyerOrders", fields: [buyerId], references: [id])
+  artisan User     @relation("ArtisanOrders", fields: [artisanId], references: [id])
   product Product? @relation(fields: [productId], references: [id])
-}
-
-enum OrderStatus {
-  PENDING
-  FULFILLED
-  CANCELLED
 }

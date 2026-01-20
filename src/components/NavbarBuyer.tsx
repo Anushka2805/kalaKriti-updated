@@ -5,29 +5,32 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   FiSearch,
-  FiMessageSquare,
-  FiHeart,
   FiShoppingCart,
   FiPackage,
   FiShoppingBag,
   FiLogOut,
 } from "react-icons/fi";
 import { FaUserCircle } from "react-icons/fa";
+import { useCart } from "@/store/cartContext";
 
 export default function NavbarBuyer() {
-  const [openProducts, setOpenProducts] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { cart } = useCart();
+
+  // ✅ correct quantity calculation
+  const totalItems = cart.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
 
   const handleLogout = async () => {
-  await fetch("/api/auth/logout", {
-    method: "POST",
-    credentials: "include", // 🔥 IMPORTANT
-  });
-
-  router.push("/buyer/signin");
-};
-
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+    router.push("/buyer/signin");
+  };
 
   const isActive = (href: string) => {
     if (href === "/buyer") return pathname === "/buyer";
@@ -72,15 +75,20 @@ export default function NavbarBuyer() {
             <FiPackage /> Orders
           </Link>
 
+          {/* ✅ SINGLE CART ICON WITH BADGE */}
           <Link href="/buyer/cart" className="relative p-2 rounded-full hover:bg-gray-50">
-            <FiShoppingCart size={18} />
+            <FiShoppingCart size={20} />
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center">
+                {totalItems}
+              </span>
+            )}
           </Link>
 
           <Link href="/buyer/profile" className="p-2 rounded-full hover:bg-gray-50">
             <FaUserCircle className="w-8 h-8 text-gray-400" />
           </Link>
 
-          {/* 🔴 LOGOUT */}
           <button
             onClick={handleLogout}
             className="p-2 rounded-full text-red-600 hover:bg-red-50"

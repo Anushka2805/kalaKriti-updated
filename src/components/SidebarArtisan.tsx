@@ -1,6 +1,8 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   FiHome,
   FiTrendingUp,
@@ -8,6 +10,7 @@ import {
   FiShoppingBag,
   FiMessageSquare,
   FiLogOut,
+  FiBox,
 } from "react-icons/fi";
 import { FaUserCircle } from "react-icons/fa";
 
@@ -15,49 +18,64 @@ const navItems = [
   { label: "Dashboard", href: "/artisan/dashboard", icon: <FiHome size={18} /> },
   { label: "AI Market Assistant", href: "/artisan/market", icon: <FiTrendingUp size={18} /> },
   { label: "AI Photo Studio", href: "/artisan/studio", icon: <FiCamera size={18} /> },
+  { label: "My Products", href: "/artisan/products", icon: <FiBox size={18} /> },
+  { label: "Archived Products", href: "/artisan/products/archived", icon: <FiBox size={18} /> },
   { label: "Order History", href: "/artisan/orders", icon: <FiShoppingBag size={18} /> },
   { label: "Chat", href: "/artisan/chat", icon: <FiMessageSquare size={18} /> },
+  { label: "Profile", href: "/artisan/profile", icon: <FaUserCircle size={18} /> },
 ];
 
 export default function SidebarArtisan() {
   const pathname = usePathname();
   const router = useRouter();
 
+  // ✅ STATE
+  const [user, setUser] = useState<any>(null);
+
+  // ✅ FETCH PROFILE
+  useEffect(() => {
+    fetch("/api/artisan/profile", { credentials: "include" })
+      .then((res) => res.json())
+      .then(setUser)
+      .catch(console.error);
+  }, []);
+
   const handleLogout = async () => {
-  await fetch("/api/auth/logout", {
-    method: "POST",
-    credentials: "include", // 🔥 VERY IMPORTANT
-  });
-
-  router.push("/artisan/signin");
-};
-
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+    router.push("/artisan/signin");
+  };
 
   return (
     <aside className="w-64 fixed h-screen bg-white border-r flex flex-col justify-between">
-
       {/* Logo + Navigation */}
       <div>
         <div className="flex items-center gap-3 p-6">
           <h2 className="text-xl font-bold text-emerald-700">KalaKriti</h2>
         </div>
 
-        <nav className="mt-4 flex flex-col">
-          {navItems.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className={`flex gap-3 px-6 py-3 items-center font-medium rounded-lg
-              ${
-                pathname === item.href
-                  ? "bg-emerald-50 text-emerald-600"
-                  : "text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              <span className="text-lg">{item.icon}</span>
-              {item.label}
-            </a>
-          ))}
+        <nav className="mt-4 flex flex-col gap-1">
+          {navItems.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex gap-3 px-6 py-3 items-center font-medium rounded-lg transition
+                  ${
+                    isActive
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+              >
+                <span className="text-lg">{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
       </div>
 
@@ -66,7 +84,9 @@ export default function SidebarArtisan() {
         <div className="flex gap-3 items-center">
           <FaUserCircle className="w-10 h-10 text-gray-400" />
           <div>
-            <p className="font-semibold text-gray-900">Ruby Jha</p>
+            <p className="font-semibold text-gray-900">
+              {user?.fullName || "Artisan"}
+            </p>
             <p className="text-sm text-gray-500">Artisan</p>
           </div>
         </div>
@@ -79,7 +99,6 @@ export default function SidebarArtisan() {
           Logout
         </button>
       </div>
-
     </aside>
   );
 }

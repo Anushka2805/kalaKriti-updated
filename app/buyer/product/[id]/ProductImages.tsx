@@ -7,6 +7,11 @@ export default function ProductInfo({ product }: { product: any }) {
 
       <h1 className="text-lg md:text-xl font-semibold text-gray-900">
         {product.name}
+        {product.isArchived && (
+    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
+      Archived
+    </span>
+  )}
       </h1>
 
       <p className="text-xs text-gray-700">

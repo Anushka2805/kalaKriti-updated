@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const { name, description, price, basePrice, artisanId, images } = body;
 
     if (!name || !price || !artisanId) {
@@ -22,15 +21,12 @@ export async function POST(req: Request) {
         price: Number(price),
         basePrice: basePrice ? Number(basePrice) : null,
         artisanId,
+        isActive: true, // ✅ NEW product always active
         images: {
-          create: (images || []).map((url: string) => ({
-            url,
-          })),
+          create: (images || []).map((url: string) => ({ url })),
         },
       },
-      include: {
-        images: true,
-      },
+      include: { images: true },
     });
 
     return NextResponse.json(product, { status: 201 });
@@ -43,10 +39,13 @@ export async function POST(req: Request) {
   }
 }
 
-/* ---------- GET ALL PRODUCTS ---------- */
+/* ---------- GET ALL PRODUCTS (BUYER MARKETPLACE) ---------- */
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
+      where: {
+        isActive: true, // 🔥 THIS IS THE FIX
+      },
       include: {
         images: {
           select: { url: true },
@@ -62,8 +61,8 @@ export async function GET() {
   } catch (error) {
     console.error("GET /api/products error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch products" }
-      , { status: 500 }
+      { error: "Failed to fetch products" },
+      { status: 500 }
     );
   }
 }

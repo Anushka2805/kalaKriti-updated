@@ -45,7 +45,16 @@ export default function BuyerProductDetailPage() {
         <div className="space-y-4">
           <ProductInfo product={product} />
           <NegotiationBox product={product} />
-          <OrderBox />
+          {/* <OrderBox product={product} /> */}
+          {product.isArchived ? (
+  <div className="mt-4 p-3 rounded-xl bg-red-50 text-red-600 text-sm">
+    This product is currently unavailable
+  </div>
+) : (
+  <OrderBox product={product} />
+)}
+
+
         </div>
       </div>
 
