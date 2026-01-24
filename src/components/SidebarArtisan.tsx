@@ -21,7 +21,7 @@ const navItems = [
   { label: "My Products", href: "/artisan/products", icon: <FiBox size={18} /> },
   { label: "Archived Products", href: "/artisan/products/archived", icon: <FiBox size={18} /> },
   { label: "Order History", href: "/artisan/orders", icon: <FiShoppingBag size={18} /> },
-  // { label: "Chat", href: "/artisan/chat", icon: <FiMessageSquare size={18} /> },
+  { label: "Events", href: "/artisan/events", icon: <FiMessageSquare size={18} /> },
   { label: "Profile", href: "/artisan/profile", icon: <FaUserCircle size={18} /> },
 ];
 
