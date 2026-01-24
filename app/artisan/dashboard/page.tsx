@@ -94,16 +94,7 @@ export default function ArtisanDashboard() {
 
         {/* Tabs */}
         <div className="flex gap-3 mb-6">
-          <button
-            onClick={() => setActiveTab("chats")}
-            className={`px-4 py-2 text-sm rounded-lg border ${
-              activeTab === "chats"
-                ? "bg-emerald-600 text-white border-emerald-600"
-                : "bg-gray-100 text-gray-700 border-gray-200"
-            }`}
-          >
-            Chats
-          </button>
+          
 
           <button
             onClick={() => setActiveTab("requests")}
