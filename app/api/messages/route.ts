@@ -1,6 +1,6 @@
 // app/api/messages/route.ts
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/src/lib/prisma";
 
 // GET /api/messages?conversationId=xxx  → get messages of one conversation
 export async function GET(req: Request) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/src/lib/prisma";
 
 // GET /api/custom-requests?conversationId=xxx
 export async function GET(req: Request) {

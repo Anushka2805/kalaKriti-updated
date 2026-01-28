@@ -1,15 +1,14 @@
 // app/api/analyze/route.ts
-// Make sure you have installed:  npm install @google/genai
+// Requires: npm install @google/genai
 
 import { GoogleGenAI } from "@google/genai";
 import { Buffer } from "buffer";
+import { GEMINI_VISION_PROMPT } from "@/src/lib/ai/geminiVisionPrompt";
 
 export async function POST(req: Request) {
   try {
     console.log("------ /api/analyze HIT ------");
-    console.log("Content-Type:", req.headers.get("content-type"));
 
-    // 1) Read multipart/form-data
     const form = await req.formData();
     const file = form.get("image") as File | null;
 
@@ -22,37 +21,14 @@ export async function POST(req: Request) {
 
     const mimeType = file.type || "image/png";
 
-    // 2) Convert file -> base64 string
+    // convert image → base64
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
 
-    // 3) Init GenAI client
-    // SDK will read GEMINI_API_KEY from environment automatically
+    // init Gemini (API key auto-picked from env)
     const ai = new GoogleGenAI({});
 
-    const prompt = `
-      Analyze this craft product image and return JSON with this EXACT SHAPE:
-
-      {
-        "colors": ["#aabbcc"],
-        "tags": ["handmade"],
-        "recommendations": ["Improve lighting"],
-        "demand": 80,
-        "pricing": {
-          "min": 150,
-          "fair": 250,
-          "range": "₹150 - ₹300",
-          "reason": "Handmade item with strong appeal"
-        }
-      }
-
-      RULES:
-      - Output ONLY valid JSON.
-      - No markdown.
-      - No extra text or explanation.
-    `;
-
-    console.log("Sending to Gemini (gemini-2.5-flash)...");
+    console.log("Sending image to Gemini Vision...");
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -60,7 +36,7 @@ export async function POST(req: Request) {
         {
           role: "user",
           parts: [
-            { text: prompt },
+            { text: GEMINI_VISION_PROMPT },
             {
               inlineData: {
                 data: base64,
@@ -75,16 +51,16 @@ export async function POST(req: Request) {
       },
     });
 
-    const output = response.text;
-    console.log("GEMINI RAW TEXT >>>", output);
+    const rawText = response.text;
+    console.log("GEMINI RAW >>>", rawText);
 
     let parsed;
     try {
-      parsed = JSON.parse(output);
+      parsed = JSON.parse(rawText);
     } catch (err) {
       console.error("JSON PARSE ERROR >>>", err);
       return Response.json(
-        { error: "Gemini returned invalid JSON", raw: output },
+        { error: "Gemini returned invalid JSON", raw: rawText },
         { status: 500 }
       );
     }

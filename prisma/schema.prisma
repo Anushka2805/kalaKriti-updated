@@ -8,52 +8,143 @@ datasource db {
 }
 
 model Conversation {
-  id              String          @id @default(cuid())
-  title           String
-  createdAt       DateTime        @default(now())
-  messages        Message[]
-  customRequests  CustomRequest[]
-  negotiations    Negotiation[]
+  id        String   @id @default(cuid())
+  title     String
+  createdAt DateTime @default(now())
+
+  messages       Message[]
+  customRequests CustomRequest[]
+  negotiations   Negotiation[]
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  name        String  @default("Handmade Item")
+  description String?
+
+  price     Int
+  basePrice Int?
+  artisanId String
+  artisan   User     @relation("ArtisanProducts", fields: [artisanId], references: [id])
+  createdAt DateTime @default(now())
+
+  images       ProductImage[]
+  negotiations Negotiation[]
+  Wishlist     Wishlist[]
+  orders       Order[] // ✅ ADD THIS
+  isActive  Boolean  @default(true)
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
 }
 
 model Message {
-  id             String       @id @default(cuid())
+  id String @id @default(cuid())
+
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   conversationId String
-  from           String       // "buyer" | "artisan"
-  text           String
-  createdAt      DateTime     @default(now())
+
+  from      String // "buyer" | "artisan"
+  text      String
+  createdAt DateTime @default(now())
 }
 
 model CustomRequest {
-  id             String       @id @default(cuid())
+  id String @id @default(cuid())
+
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   conversationId String
 
-  title          String
-  note           String
-  imageUrl       String?
+  title    String
+  note     String
+  imageUrl String?
 
-  // was: status CustomRequestStatus
-  status         String       @default("SENT")
-  createdAt      DateTime     @default(now())
+  status    String   @default("SENT")
+  createdAt DateTime @default(now())
 }
 
 model Negotiation {
-  id             String       @id @default(cuid())
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  id             String   @id @default(uuid())
+  productId      String
   conversationId String
+  buyerId        String
+  artisanId      String
+  basePrice      Int
+  buyerOffer     Int
+  artisanCounter Int?
+  status         String   @default("PENDING")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  productName    String
-  buyerName      String
-  offerAmount    Int
-  counterAmount  Int?
+  product      Product      @relation(fields: [productId], references: [id])
+  conversation Conversation @relation(fields: [conversationId], references: [id])
 
-  // was: status NegotiationStatus
-  status         String       @default("PENDING")
-  createdAt      DateTime     @default(now())
+  @@index([productId])
+  @@index([buyerId])
+  @@index([artisanId])
 }
 
-// ❌ ye 2 enums HATA DO completely (bilkul na rakho):
-// enum CustomRequestStatus { ... }
-// enum NegotiationStatus { ... }
+model User {
+  id       String @id @default(cuid())
+  role     String // "ARTISAN" | "BUYER"
+  fullName String
+  phone    String @unique
+  password String
+
+  // Optional (buyer)
+  email String?
+  city  String?
+
+  // 👇 ADD THESE
+  bio        String?
+  location   String?
+  profilePic String?
+
+  // Optional (artisan)
+  language   String?
+  state      String?
+  craftType  String?
+  experience Int?
+
+  products Product[] @relation("ArtisanProducts")
+
+  // ✅ ADD THESE TWO LINES
+  buyerOrders   Order[] @relation("BuyerOrders")
+  artisanOrders Order[] @relation("ArtisanOrders")
+
+  createdAt DateTime @default(now())
+}
+
+model Wishlist {
+  id        String @id @default(cuid())
+  buyerId   String
+  productId String
+
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([buyerId, productId])
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  orderNumber String
+  buyerId     String
+  artisanId   String
+  productId   String?
+  title       String
+  amount      Int
+  pincode String?
+  address String?
+  status      String   @default("PENDING") // ✅ String, NOT enum
+  isCustom    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  buyer   User     @relation("BuyerOrders", fields: [buyerId], references: [id])
+  artisan User     @relation("ArtisanOrders", fields: [artisanId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+}
