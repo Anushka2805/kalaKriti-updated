@@ -3,7 +3,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { Buffer } from "buffer";
-import { GEMINI_VISION_PROMPT } from "@/lib/ai/geminiVisionPrompt";
+import { GEMINI_VISION_PROMPT } from "@/src/lib/ai/geminiVisionPrompt";
 
 export async function POST(req: Request) {
   try {

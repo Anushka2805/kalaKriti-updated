@@ -1,11 +1,11 @@
 "use client";
 
-import HeroSection from "@/components/home/HeroSection";
-import ProblemSection from "@/components/home/ProblemSection";
-import SolutionSection from "@/components/home/SolutionSection";
-import ManagerSection from "@/components/home/ManagerSection";
-import BuyerSection from "@/components/home/BuyerSection";
-import JoinCTASection from "@/components/home/JointCTASection";
+import HeroSection from "@/src/components/home/HeroSection";
+import ProblemSection from "@/src/components/home/ProblemSection";
+import SolutionSection from "@/src/components/home/SolutionSection";
+import ManagerSection from "@/src/components/home/ManagerSection";
+import BuyerSection from "@/src/components/home/BuyerSection";
+import JoinCTASection from "@/src/components/home/JointCTASection";
 
 export default function HomePage() {
   return (

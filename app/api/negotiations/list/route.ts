@@ -1,5 +1,5 @@
 // app/api/negotiations/list/route.ts
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/src/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET() {

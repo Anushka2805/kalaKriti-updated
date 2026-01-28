@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/src/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     const negotiations = await prisma.negotiation.findMany({
       include: {
         product: {
-          select: { name: true, image: true, price: true }
+          select: { name: true, images: true, price: true }
         }
       },
       orderBy: { createdAt: 'desc' }

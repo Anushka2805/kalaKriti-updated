@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import cloudinary from "@/lib/cloudinary";
+import cloudinary from "@/src/lib/cloudinary";
 
 export async function POST(req: Request) {
   try {

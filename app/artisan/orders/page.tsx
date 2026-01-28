@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useVoiceAssistant } from "@/app/hooks/useVoiceAssistant";
 
 type Order = {
   id: string;
@@ -15,6 +16,9 @@ export default function OrderHistory() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
+  /* ================= VOICE ASSISTANT ================= */
+  const { speak, listen } = useVoiceAssistant();
+
   useEffect(() => {
     fetch("/api/artisan/orders", {
       credentials: "include",
@@ -28,13 +32,82 @@ export default function OrderHistory() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!loading) {
+      const pendingCount = orders.filter(o => o.status === "PENDING").length;
+      const fulfilledCount = orders.filter(o => o.status === "FULFILLED").length;
+
+      speak(
+        `Order history khuli hai. ${pendingCount} pending orders aur ${fulfilledCount} fulfilled orders hain. Aap bol sakte ho accept first order, reject first order, ya repeat.`
+      );
+      listen(handleOrderVoice);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  const handleOrderVoice = (text: string) => {
+    text = text.toLowerCase();
+
+    const pendingOrders = orders.filter(o => o.status === "PENDING");
+
+    if (text.includes("pending")) {
+      speak(`Aapke ${pendingOrders.length} pending orders hain.`);
+      listen(handleOrderVoice);
+      return;
+    }
+
+    if (text.includes("fulfilled")) {
+      const fulfilled = orders.filter(o => o.status === "FULFILLED").length;
+      speak(`Aapke ${fulfilled} fulfilled orders hain.`);
+      listen(handleOrderVoice);
+      return;
+    }
+
+    if (text.includes("accept") && pendingOrders.length > 0) {
+      speak("Pehla pending order accept kiya ja raha hai.");
+      updateStatusFromVoice(pendingOrders[0].id, "FULFILLED");
+      return;
+    }
+
+    if (text.includes("reject") && pendingOrders.length > 0) {
+      speak("Pehla pending order reject kiya ja raha hai.");
+      updateStatusFromVoice(pendingOrders[0].id, "CANCELLED");
+      return;
+    }
+
+    if (text.includes("repeat")) {
+      speak(
+        "Aap bol sakte ho pending orders, fulfilled orders, accept first order, ya reject first order."
+      );
+      listen(handleOrderVoice);
+    }
+  };
+
+  async function updateStatusFromVoice(
+    orderId: string,
+    status: "FULFILLED" | "CANCELLED"
+  ) {
+    await fetch("/api/artisan/orders", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId,
+        status,
+      }),
+    });
+
+    window.location.reload();
+  }
+
   if (loading) {
     return <p className="p-10 text-gray-500">Loading orders...</p>;
   }
 
   const pendingOrders = orders.filter(o => o.status === "PENDING");
   const fulfilledOrders = orders.filter(o => o.status === "FULFILLED");
-const cancelledOrders = orders.filter(o => o.status === "CANCELLED");
+
+  /* ================= UI (UNCHANGED) ================= */
 
   return (
     <main className="p-10">
@@ -43,7 +116,6 @@ const cancelledOrders = orders.filter(o => o.status === "CANCELLED");
         Track your previous and ongoing orders easily.
       </p>
 
-      {/* PENDING ORDERS */}
       <section className="mt-10">
         <h2 className="text-xl font-semibold mb-4">Pending Orders</h2>
 
@@ -58,7 +130,6 @@ const cancelledOrders = orders.filter(o => o.status === "CANCELLED");
         )}
       </section>
 
-      {/* FULFILLED ORDERS */}
       <section className="mt-12">
         <h2 className="text-xl font-semibold mb-4">Fulfilled Orders</h2>
 
@@ -76,7 +147,7 @@ const cancelledOrders = orders.filter(o => o.status === "CANCELLED");
   );
 }
 
-/* ---------------- ORDER CARD ---------------- */
+/* ---------------- ORDER CARD (UNCHANGED) ---------------- */
 
 function OrderCard({ order }: { order: Order }) {
   async function updateStatus(status: "FULFILLED" | "CANCELLED") {

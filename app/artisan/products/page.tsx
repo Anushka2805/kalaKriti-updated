@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useVoiceAssistant } from "@/app/hooks/useVoiceAssistant";
 
 type Product = {
   id: string;
@@ -14,12 +15,46 @@ export default function ArtisanProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
+  /* ================= VOICE ASSISTANT ================= */
+  const { speak, listen } = useVoiceAssistant();
+
   useEffect(() => {
     fetch("/api/artisan/products", { credentials: "include" })
       .then((res) => res.json())
-      .then(setProducts)
+      .then((data) => {
+        setProducts(data);
+        speak(
+          data.length === 0
+            ? "Aapke koi active products nahi hain."
+            : `My products page khuli hai. ${data.length} products listed hain. Aap bol sakte ho archive first product.`
+        );
+        listen(handleProductsVoice);
+      })
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleProductsVoice = (text: string) => {
+    text = text.toLowerCase();
+
+    if (products.length === 0) {
+      speak("Abhi archive karne ke liye koi product nahi hai.");
+      return;
+    }
+
+    if (text.includes("archive")) {
+      speak("Pehla product archive kiya ja raha hai.");
+      archiveProduct(products[0].id);
+      return;
+    }
+
+    if (text.includes("repeat")) {
+      speak(
+        "Aap bol sakte ho archive first product, ya sirf archive."
+      );
+      listen(handleProductsVoice);
+    }
+  };
 
   async function archiveProduct(productId: string) {
     if (!confirm("Archive this product? Buyers won't see it anymore.")) return;
@@ -43,6 +78,8 @@ export default function ArtisanProductsPage() {
 
   if (loading) return <p className="p-6">Loading...</p>;
   if (products.length === 0) return <p className="p-6">No products</p>;
+
+  /* ================= UI (UNCHANGED) ================= */
 
   return (
     <main className="p-6">
