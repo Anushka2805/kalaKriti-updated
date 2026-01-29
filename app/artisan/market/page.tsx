@@ -1,120 +1,82 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useImageStore } from "@/src/lib/store/imageStore";
+import { useEffect, useState } from "react";
 import { useVoiceAssistant } from "@/app/hooks/useVoiceAssistant";
 
-/* 🔹 helper: File → base64 */
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
+/* ================= TYPES ================= */
+type AnalysisResult = {
+  caption?: string;
+  hashtags?: string[];
+  promo?: string;
+  pricing?: {
+    suggested_range?: string;
+  };
+};
 
 export default function MarketAssistant() {
-  // --- Existing State (UNCHANGED) ---
+  /* ---------- IMAGE / POST ---------- */
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [isEditingPrice, setIsEditingPrice] = useState(false);
-  const [customPrice, setCustomPrice] = useState<string>("");
-
-  // --- Video State ---
-  const [showVideoUI, setShowVideoUI] = useState(false);
+  /* ---------- VIDEO ---------- */
   const [videoImages, setVideoImages] = useState<File[]>([]);
-  const [videoLoading, setVideoLoading] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoLoading, setVideoLoading] = useState(false);
 
-  const { analysis, setImageData } = useImageStore();
-
-  /* ================= VOICE ASSISTANT ================= */
+  /* ---------- VOICE ---------- */
   const { speak, listen } = useVoiceAssistant();
 
+  /* 🔊 INTRO */
   useEffect(() => {
     speak(
-      "Yeh AI market assistant hai. Aap product image upload karke caption, hashtags, price aur promo video bana sakte ho. Aap bol sakte ho upload image, generate post, generate video, ya post."
+      "AI Market Assistant ready hai. Mic dabakar upload image, generate post, ya generate video bol sakti ho."
     );
-    listen(handleMarketVoice);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleMarketVoice = (text: string) => {
-    text = text.toLowerCase();
+  const handleMic = () => {
+    listen(handleVoice);
+  };
 
-    if (text.includes("upload")) {
+  const handleVoice = (text: string) => {
+    const t = text.toLowerCase();
+
+    if (t.includes("upload")) {
       document.getElementById("upload")?.click();
       return;
     }
 
-    if (text.includes("generate") && text.includes("post")) {
-      analyzeImage();
+    if (t.includes("generate") && t.includes("post")) {
+      generatePost();
       return;
     }
 
-    if (text.includes("change price")) {
-      setIsEditingPrice(true);
-      speak("Naya price boliye.");
-      listen(handleMarketVoice);
-      return;
-    }
-
-    if (text.includes("price")) {
-      const num = text.replace(/\D/g, "");
-      if (num) {
-        setCustomPrice(num);
-        speak(`Price ${num} set ho gaya.`);
-      }
-      return;
-    }
-
-    if (text.includes("generate") && text.includes("video")) {
-      setShowVideoUI(true);
-      speak("Promo video section khul gaya.");
-      return;
-    }
-
-    if (text.includes("create") && text.includes("video")) {
+    if (t.includes("generate") && t.includes("video")) {
       generateVideo();
       return;
     }
-
-    if (text.includes("post")) {
-      handlePost();
-      return;
-    }
-
-    if (text.includes("repeat")) {
-      speak(
-        "Aap image upload karke post generate kar sakte ho, price change kar sakte ho, promo video bana sakte ho aur post kar sakte ho."
-      );
-      listen(handleMarketVoice);
-    }
   };
 
-  /* ================= EXISTING LOGIC (UNCHANGED) ================= */
-
-  async function onUpload(e: any) {
+  /* ================= IMAGE UPLOAD ================= */
+  async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const base64 = await fileToBase64(file);
-
     setImage(file);
-    setPreview(base64);
+    setPreview(URL.createObjectURL(file));
+    setAnalysis(null);
   }
 
-  async function analyzeImage() {
-    if (!image || !preview) return;
+  /* ================= POST GENERATION ================= */
+  async function generatePost() {
+    if (!image) return;
 
     const form = new FormData();
     form.append("image", image);
 
     setLoading(true);
-
     const res = await fetch("/api/analyze", {
       method: "POST",
       body: form,
@@ -124,34 +86,17 @@ export default function MarketAssistant() {
     setLoading(false);
 
     if (!res.ok) {
-      alert("Failed to analyze image");
+      alert("Failed to generate post");
       return;
     }
 
-    setImageData(preview, json);
-    setIsEditingPrice(false);
-    setCustomPrice("");
+    setAnalysis(json);
   }
 
-  function handleVideoImages(e: any) {
-    const files = Array.from(e.target.files || []) as File[];
-
-    if (videoImages.length + files.length > 6) {
-      alert(
-        `You can only upload a maximum of 6 images. You already have ${videoImages.length}.`
-      );
-      e.target.value = "";
-      return;
-    }
-
-    setVideoImages((prev) => [...prev, ...files]);
-    e.target.value = "";
-  }
-
-  function removeVideoImage(indexToRemove: number) {
-    setVideoImages((prev) =>
-      prev.filter((_, idx) => idx !== indexToRemove)
-    );
+  /* ================= VIDEO ================= */
+  function handleVideoImages(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    setVideoImages(files.slice(0, 6));
   }
 
   async function generateVideo() {
@@ -161,7 +106,6 @@ export default function MarketAssistant() {
     videoImages.forEach((img) => form.append("images", img));
 
     setVideoLoading(true);
-
     const res = await fetch("/api/generate-video", {
       method: "POST",
       body: form,
@@ -171,36 +115,36 @@ export default function MarketAssistant() {
     setVideoLoading(false);
 
     if (!res.ok) {
-      alert("Video generation failed: " + (json.error || "Unknown error"));
+      alert("Video generation failed");
       return;
     }
 
     setVideoUrl(json.videoUrl);
   }
 
-  function handlePost() {
-    const finalPrice = customPrice
-      ? `₹${customPrice}`
-      : analysis?.pricing.suggested_range;
-
-    alert(`Post ready 🚀\nSelling Price: ${finalPrice}`);
-  }
-
-  /* ================= UI (UNCHANGED) ================= */
-
+  /* ================= UI ================= */
   return (
     <main className="p-10 text-black">
+      {/* 🎤 MIC */}
+      <button
+        onClick={handleMic}
+        className="mb-4 p-3 rounded-full bg-emerald-600 text-white text-xl"
+      >
+        🎤
+      </button>
+
       <h1 className="text-3xl font-bold">AI Market Assistant</h1>
-      <p className="text-gray-800 mt-1">
-        Upload a product image to generate caption, hashtags & pricing.
+      <p className="text-gray-700 mt-1">
+        Upload product image to generate caption, hashtags & pricing
       </p>
 
+      {/* IMAGE UPLOAD */}
       <div className="mt-6 border p-6 rounded bg-white">
         <input
-          type="file"
           id="upload"
-          className="hidden"
+          type="file"
           accept="image/*"
+          className="hidden"
           onChange={onUpload}
         />
         <label htmlFor="upload" className="cursor-pointer font-medium">
@@ -210,30 +154,67 @@ export default function MarketAssistant() {
         {preview && (
           <img
             src={preview}
-            className="w-48 mt-4 rounded shadow border"
-            alt="Preview"
+            alt="preview"
+            className="w-48 mt-4 rounded border shadow"
           />
         )}
       </div>
 
-      <div className="mt-6 flex gap-4 items-center">
+      {/* ACTIONS */}
+      <div className="mt-6 flex gap-4">
         <button
-          onClick={analyzeImage}
+          onClick={generatePost}
           disabled={!image || loading}
           className="bg-green-600 text-white px-5 py-2 rounded disabled:opacity-50"
         >
-          {loading ? "Analyzing…" : "Generate Post"}
-        </button>
-
-        <button
-          onClick={() => setShowVideoUI((v) => !v)}
-          className="bg-blue-600 text-white px-5 py-2 rounded"
-        >
-          Generate Video
+          {loading ? "Generating…" : "Generate Post"}
         </button>
       </div>
 
-      {/* Remaining UI unchanged */}
+      {/* GENERATED POST */}
+      {analysis && (
+        <div className="mt-8 bg-white border p-6 rounded">
+          <h3 className="font-bold">Generated Caption</h3>
+          <p>{analysis.caption || "—"}</p>
+
+          <h3 className="font-bold mt-4">Hashtags</h3>
+          <p>
+            {Array.isArray(analysis.hashtags)
+              ? analysis.hashtags.join(" ")
+              : "—"}
+          </p>
+
+          <h3 className="font-bold mt-4">Suggested Price</h3>
+          <p>{analysis.pricing?.suggested_range ?? "—"}</p>
+        </div>
+      )}
+
+      {/* VIDEO SECTION */}
+      <div className="mt-10 bg-white border p-6 rounded">
+        <h2 className="font-bold mb-3">Promo Video</h2>
+
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleVideoImages}
+        />
+
+        <button
+          onClick={generateVideo}
+          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          {videoLoading ? "Generating…" : "Generate Video"}
+        </button>
+
+        {videoUrl && (
+          <video
+            src={videoUrl}
+            controls
+            className="mt-4 w-full rounded"
+          />
+        )}
+      </div>
     </main>
   );
 }

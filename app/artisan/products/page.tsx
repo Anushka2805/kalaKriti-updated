@@ -18,6 +18,7 @@ export default function ArtisanProductsPage() {
   /* ================= VOICE ASSISTANT ================= */
   const { speak, listen } = useVoiceAssistant();
 
+  /* 🔊 INTRO (NO LISTEN) */
   useEffect(() => {
     fetch("/api/artisan/products", { credentials: "include" })
       .then((res) => res.json())
@@ -26,33 +27,37 @@ export default function ArtisanProductsPage() {
         speak(
           data.length === 0
             ? "Aapke koi active products nahi hain."
-            : `My products page khuli hai. ${data.length} products listed hain. Aap bol sakte ho archive first product.`
+            : `My products page khuli hai. ${data.length} products listed hain. Mic dabakar archive bol sakte ho.`
         );
-        listen(handleProductsVoice);
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* 🎤 MIC CLICK */
+  const handleMicClick = () => {
+    listen(handleProductsVoice);
+  };
+
+  /* 🧠 VOICE LOGIC */
   const handleProductsVoice = (text: string) => {
-    text = text.toLowerCase();
+    const t = text.toLowerCase();
 
     if (products.length === 0) {
       speak("Abhi archive karne ke liye koi product nahi hai.");
       return;
     }
 
-    if (text.includes("archive")) {
+    if (t.includes("archive")) {
       speak("Pehla product archive kiya ja raha hai.");
       archiveProduct(products[0].id);
       return;
     }
 
-    if (text.includes("repeat")) {
+    if (t.includes("repeat")) {
       speak(
         "Aap bol sakte ho archive first product, ya sirf archive."
       );
-      listen(handleProductsVoice);
     }
   };
 
@@ -83,6 +88,14 @@ export default function ArtisanProductsPage() {
 
   return (
     <main className="p-6">
+      {/* 🎤 MIC (ONLY ADDITION) */}
+      <button
+        onClick={handleMicClick}
+        className="mb-4 p-3 rounded-full bg-emerald-600 text-white text-xl"
+      >
+        🎤
+      </button>
+
       <h1 className="text-2xl font-bold mb-6">My Products</h1>
 
       <div className="grid md:grid-cols-3 gap-4">

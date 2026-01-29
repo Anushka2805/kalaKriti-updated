@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useVoiceAssistant } from "@/app/hooks/useVoiceAssistant";
 
 export default function ArtisanDashboard() {
-  // --- FIXED TABS ---
+  /* --- FIXED TABS --- */
   const tabList = ["chats", "requests", "negotiations"] as const;
   const [activeTab, setActiveTab] =
     useState<(typeof tabList)[number]>("chats");
@@ -15,56 +15,57 @@ export default function ArtisanDashboard() {
   /* ================= VOICE ASSISTANT ================= */
   const { speak, listen } = useVoiceAssistant();
 
+  /* 🔊 INTRO */
   useEffect(() => {
     speak(
-      "Welcome back. Ye aapka artisan dashboard hai. Aap bol sakte ho naya product, negotiations, ya custom requests."
+      "Welcome back. Ye aapka artisan dashboard hai. Aap bol sakte ho naya product, negotiations, custom requests."
     );
-    listen(handleDashboardVoice);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (activeTab === "chats") {
-      speak("Ab chats ka section khula hai.");
-    }
-    if (activeTab === "requests") {
-      speak("Ab custom requests ka section khula hai.");
-    }
-    if (activeTab === "negotiations") {
-      speak("Ab negotiations ka section khula hai.");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  /* 🎤 MIC CLICK */
+  const handleMicClick = () => {
+    listen(handleDashboardVoice);
+  };
 
+  /* 🔁 SPEAK + AUTO LISTEN */
+  const speakAndListen = (msg: string) => {
+    speak(msg);
+    setTimeout(() => listen(handleDashboardVoice), 600);
+  };
+
+  /* 🧠 VOICE LOGIC */
   const handleDashboardVoice = (text: string) => {
-    text = text.toLowerCase();
+    const t = text.toLowerCase();
 
-    if (text.includes("naya") || text.includes("product")) {
+    if (t.includes("naya") || t.includes("product")) {
       speak("Naya product add karne ke liye le ja rahi hoon.");
       router.push("/artisan/add-product");
       return;
     }
 
-    if (text.includes("negotiation")) {
+    if (t.includes("negotiation")) {
       setActiveTab("negotiations");
+      speakAndListen("Ab negotiations ka section khula hai.");
       return;
     }
 
-    if (text.includes("request")) {
+    if (t.includes("request")) {
       setActiveTab("requests");
+      speakAndListen("Ab custom requests ka section khula hai.");
       return;
     }
 
-    if (text.includes("chat")) {
+    if (t.includes("chat")) {
+      speak("Chats khol rahi hoon.");
       router.push("/chat");
       return;
     }
 
-    if (text.includes("repeat") || text.includes("samjhao")) {
-      speak(
-        "Ye dashboard aapke products, negotiations aur requests manage karne ke liye hai. Aap bol sakte ho naya product, negotiations, ya custom requests."
+    if (t.includes("repeat") || t.includes("samjhao")) {
+      speakAndListen(
+        "Ye dashboard aapke products, negotiations aur requests manage karne ke liye hai. Aap bol sakte ho naya product, negotiations, custom requests."
       );
-      listen(handleDashboardVoice);
     }
   };
 
@@ -82,10 +83,20 @@ export default function ArtisanDashboard() {
     { id: "1", productName: "Handmade Basket", offerAmount: 450 },
   ];
 
-  /* ================= UI (UNCHANGED) ================= */
+  /* ================= UI (ORIGINAL – UNCHANGED) ================= */
 
   return (
     <main className="p-10">
+
+      {/* 🎤 MIC BUTTON */}
+      <button
+        type="button"
+        onClick={handleMicClick}
+        className="mb-6 p-3 rounded-full bg-emerald-600 text-white text-xl"
+      >
+        🎤
+      </button>
+
       {/* ==================== WELCOME SECTION ==================== */}
       <div>
         <h1 className="text-4xl font-bold text-gray-900">

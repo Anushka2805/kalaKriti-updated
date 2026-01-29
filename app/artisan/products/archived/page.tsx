@@ -9,6 +9,7 @@ export default function ArchivedProductsPage() {
   /* ================= VOICE ASSISTANT ================= */
   const { speak, listen } = useVoiceAssistant();
 
+  /* 🔊 INTRO (NO AUTO LISTEN) */
   useEffect(() => {
     fetch("/api/artisan/products/archived", { credentials: "include" })
       .then((res) => res.json())
@@ -17,32 +18,36 @@ export default function ArchivedProductsPage() {
         speak(
           data.length === 0
             ? "Koi archived product nahi hai."
-            : `Archived products page khuli hai. ${data.length} products archived hain. Aap bol sakte ho restore first product.`
+            : `Archived products page khuli hai. ${data.length} products archived hain. Mic dabakar restore bol sakte ho.`
         );
-        listen(handleArchiveVoice);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* 🎤 MIC CLICK */
+  const handleMicClick = () => {
+    listen(handleArchiveVoice);
+  };
+
+  /* 🧠 VOICE LOGIC */
   const handleArchiveVoice = (text: string) => {
-    text = text.toLowerCase();
+    const t = text.toLowerCase();
 
     if (products.length === 0) {
       speak("Abhi koi archived product nahi hai.");
       return;
     }
 
-    if (text.includes("restore")) {
+    if (t.includes("restore")) {
       speak("Pehla archived product restore kiya ja raha hai.");
       restoreProduct(products[0].id);
       return;
     }
 
-    if (text.includes("repeat")) {
+    if (t.includes("repeat")) {
       speak(
         "Aap bol sakte ho restore first product, ya sirf restore."
       );
-      listen(handleArchiveVoice);
     }
   };
 
@@ -65,6 +70,14 @@ export default function ArchivedProductsPage() {
 
   return (
     <main className="p-6">
+      {/* 🎤 MIC (ONLY ADDITION) */}
+      <button
+        onClick={handleMicClick}
+        className="mb-4 p-3 rounded-full bg-emerald-600 text-white text-xl"
+      >
+        🎤
+      </button>
+
       <h1 className="text-2xl font-bold mb-6">Archived Products</h1>
 
       <div className="grid md:grid-cols-3 gap-4">
